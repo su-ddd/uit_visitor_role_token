@@ -1,0 +1,79 @@
+<?php
+/**
+ * @file
+ * Provide a custom token for one of a set of mutually exclusive roles
+ */
+
+/**
+ * Implements hook_tokenuser_login().
+ */
+
+function uit_visitor_role_token_token_info() {
+  $info['tokens']['user']['uit_organization'] = array(
+    'name' => t('UIT Organization'),
+    'description' => t('The primary UIT organization for the user.'),
+  );
+  $info['tokens']['user']['uit_is_admin'] = array(
+    'name' => t('Community Admin'),
+    'description' => t('Whether the user is a website admin'),
+  );
+  return $info;
+}
+
+/**
+ * Provide replacement values for placeholder tokens.
+ *
+ * @see httx://api.drupal.org/api/drupal/modules--system--system.api.php/function/hook_tokens/7
+ * @see httx://api.lullabot.com/token_example_tokens/7
+ * @param string $type
+ *   The machine-readable name of the type (group) of token being replaced, such
+ *   as 'node', 'user', or another type defined by a hook_token_info()
+ *   implementation.
+ * @param array $tokens
+ *   An array of tokens to be replaced. The keys are the machine-readable token
+ *   names, and the values are the raw [type:token] strings that appeared in the
+ *   original text.
+ * @param array $data (optional)
+ *   An associative array of data objects to be used when generating replacement
+ *   values, as supplied in the $data parameter to token_replace().
+ * @param array $options (optional)
+ *   An associative array of options for token replacement; see token_replace()
+ *   for possible values.
+ * @return array
+ *   An associative array of replacement values, keyed by the raw [type:token]
+ *   strings from the original text.
+ */
+function uit_visitor_role_token_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $roles = array('SS', 'AS', 'ISO', 'ITS');
+
+  $replacements = array();
+  $sanitize = !empty($options['sanitize']);
+
+  if ($type == 'user' && !empty($data['user'])) {
+    $user = $data['user'];
+    $user_roles = array_values($user->roles);
+    $user_organization = 'n/a';
+    foreach ($roles as $role) {
+      if (in_array($role, $user_roles)) {
+        $user_organization = $role;
+        continue;
+      }
+    }
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'uit_organization':
+          $replacements[$original] = $user_organization;
+          break;
+        case 'uit_is_admin':
+          if (in_array('administrator', $user_roles)) {
+            $replacements[$original] = 'yes';
+          } else {
+            $replacements[$original] = 'no';
+          }
+          break;
+      }
+    }
+  }
+  return $replacements;
+}

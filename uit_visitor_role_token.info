@@ -1,0 +1,5 @@
+name = University IT Visitor Role Token
+description = Provides a token containing one of a set of mutually exclusive roles
+version = 7.x-1.0
+core = 7.x
+package = "Stanford"
